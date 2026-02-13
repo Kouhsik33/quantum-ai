@@ -1,0 +1,76 @@
+{
+  "name": "quantum-ai",
+  "displayName": "Quantum AI",
+  "description": "AI coding assistant with explain, fix and inline completion",
+  "version": "0.1.1",
+  "publisher": "quantumHub",
+  "icon": "icon.png",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kouhsik33/quantum-ai"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguage:*"
+  ],
+  "main": "./out/extension.js",
+
+  "contributes": {
+    "commands": [
+      {
+        "command": "quantum-ai.explain",
+        "title": "Explain Code with AI"
+      },
+      {
+        "command": "quantum-ai.applyFix",
+        "title": "Apply AI Fix"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "quantum-ai.explain",
+        "key": "ctrl+k ctrl+,",
+        "mac": "cmd+k cmd+,",
+        "when": "editorTextFocus && editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "Quantum AI",
+      "properties": {
+        "quantum-ai.maxLinesForContext": {
+          "type": "number",
+          "default": 20,
+          "description": "Maximum number of lines to include as context for AI completion"
+        },
+        "quantum-ai.completionEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline AI completion"
+        }
+      }
+    }
+  },
+
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  }
+}
