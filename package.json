@@ -1,7 +1,7 @@
 {
   "name": "quantum-ai",
   "displayName": "Quantum AI",
-  "description": "AI coding assistant with explain, fix and inline completion",
+  "description": "AI-powered quantum code assistant with multi-framework support",
   "version": "0.1.1",
   "publisher": "quantumHub",
   "icon": "icon.png",
@@ -14,63 +14,278 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other",
-    "Programming Languages"
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets"
+  ],
+  "keywords": [
+    "quantum",
+    "ai",
+    "qiskit",
+    "pennylane",
+    "cirq",
+    "torchquantum",
+    "code generation",
+    "code completion"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onLanguage:*"
+    "onLanguage:python",
+    "onStartupFinished"
   ],
-  "main": "./out/extension.js",
-
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "quantum-ai.explain",
-        "title": "Explain Code with AI"
+        "title": "Quantum AI: Explain Code",
+        "category": "Quantum AI"
       },
       {
-        "command": "quantum-ai.applyFix",
-        "title": "Apply AI Fix"
+        "command": "quantum-ai.fix",
+        "title": "Quantum AI: Fix Code",
+        "category": "Quantum AI"
+      },
+      {
+        "command": "quantum-ai.suggest",
+        "title": "Quantum AI: Suggest Improvements",
+        "category": "Quantum AI"
+      },
+      {
+        "command": "quantum-ai.transpile",
+        "title": "Quantum AI: Transpile Code",
+        "category": "Quantum AI"
+      },
+      {
+        "command": "quantum-ai.openPanel",
+        "title": "Quantum AI: Open Assistant Panel",
+        "category": "Quantum AI"
+      },
+      {
+        "command": "quantum-ai.clearCache",
+        "title": "Quantum AI: Clear Cache",
+        "category": "Quantum AI"
+      },
+      {
+        "command": "quantum-ai.configure",
+        "title": "Quantum AI: Configure Settings",
+        "category": "Quantum AI"
       }
     ],
     "keybindings": [
       {
         "command": "quantum-ai.explain",
-        "key": "ctrl+k ctrl+,",
-        "mac": "cmd+k cmd+,",
+        "key": "ctrl+k ctrl+e",
+        "mac": "cmd+k cmd+e",
         "when": "editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "quantum-ai.fix",
+        "key": "ctrl+k ctrl+f",
+        "mac": "cmd+k cmd+f",
+        "when": "editorTextFocus && editorHasSelection"
+      }, 
+      {
+        "command": "quantum-ai.transpile",
+        "key": "ctrl+k ctrl+t",
+        "mac": "cmd+k cmd+t",
+        "when": "editorTextFocus && editorHasSelection && editorLangId == 'python'"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "quantum-ai.explain",
+          "group": "quantum-ai@1"
+        },
+        {
+          "when": "editorHasSelection",
+          "command": "quantum-ai.fix",
+          "group": "quantum-ai@2"
+        },
+        {
+          "when": "editorHasSelection",
+          "command": "quantum-ai.suggest",
+          "group": "quantum-ai@3"
+        },
+        {
+          "when": "editorHasSelection && resourceLangId == 'python'",
+          "command": "quantum-ai.transpile",
+          "group": "quantum-ai@4"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "quantum-ai.explain",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "quantum-ai.fix",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "quantum-ai.suggest",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "quantum-ai.transpile",
+          "when": "editorHasSelection && resourceLangId == 'python'"
+        },
+        {
+          "command": "quantum-ai.openPanel",
+          "when": "true"
+        },
+        {
+          "command": "quantum-ai.clearCache",
+          "when": "true"
+        },
+        {
+          "command": "quantum-ai.configure",
+          "when": "true"
+        }
+      ]
+    },
     "configuration": {
       "title": "Quantum AI",
       "properties": {
         "quantum-ai.maxLinesForContext": {
           "type": "number",
           "default": 20,
+          "minimum": 5,
+          "maximum": 100,
           "description": "Maximum number of lines to include as context for AI completion"
         },
         "quantum-ai.completionEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable inline AI completion"
+        },
+        "quantum-ai.debounceDelay": {
+          "type": "number",
+          "default": 300,
+          "minimum": 100,
+          "maximum": 1000,
+          "description": "Debounce delay in milliseconds for inline completions"
+        },
+        "quantum-ai.temperature": {
+          "type": "number",
+          "default": 0.2,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Temperature for AI responses (0 = precise, 1 = creative)"
+        },
+        "quantum-ai.model": {
+          "type": "string",
+          "default": "Qwen/Qwen2.5-Coder-7B-Instruct",
+          "enum": [
+            "Qwen/Qwen2.5-Coder-7B-Instruct",
+            "codellama/CodeLlama-34b-Instruct-hf",
+            "mistralai/Mistral-7B-Instruct-v0.2"
+          ],
+          "description": "Hugging Face model to use"
+        },
+        "quantum-ai.maxTokens": {
+          "type": "number",
+          "default": 500,
+          "minimum": 100,
+          "maximum": 2000,
+          "description": "Maximum tokens in AI response"
+        },
+        "quantum-ai.cacheCompletions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Cache completions to improve performance"
+        },
+        "quantum-ai.explanationDetailLevel": {
+          "type": "string",
+          "default": "intermediate",
+          "enum": [
+            "beginner",
+            "intermediate",
+            "advanced"
+          ],
+          "description": "Detail level for code explanations"
+        },
+        "quantum-ai.telemetryEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable telemetry to help improve the extension"
+        },
+        "quantum-ai.autoFixOnError": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically suggest fixes when errors are detected"
+        },
+        "quantum-ai.backendUrl": {
+       "type": "string",
+       "default": "http://localhost:8000/api",
+       "description": "URL of the Quantum AI backend API"
+    },
+    "quantum-ai.optimizeOnTranspile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Apply circuit optimization during transpilation"
+        },
+        "quantum-ai.preferredRuntime": {
+          "type": "string",
+          "enum": ["legacy", "modern", "latest"],
+          "default": "modern",
+          "description": "Preferred runtime version for transpiled code"
+        },
+        "quantum-ai.compatibilityLevel": {
+          "type": "string",
+          "enum": ["conservative", "balanced", "aggressive"],
+          "default": "balanced",
+          "description": "How aggressively to modernize code"
+        },
+        "quantum-ai.framework": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "qiskit",
+            "pennylane",
+            "cirq",
+            "torchquantum"
+          ],
+          "description": "Default quantum framework to use (auto detects from code)"
         }
       }
     }
   },
-
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prepare": "husky install"
   },
-
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/node": "^18.x",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "axios": "^1.13.5",
     "eslint": "^8.56.0",
-    "typescript": "^5.3.3"
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
