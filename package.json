@@ -69,7 +69,12 @@
         "command": "quantum-ai.configure",
         "title": "Quantum AI: Configure Settings",
         "category": "Quantum AI"
-      }
+      },
+      {
+      "command": "quantum-ai.openChat",
+      "title": "Quantum AI: Open Chat",
+      "category": "Quantum AI"
+    }
     ],
     "keybindings": [
       {
@@ -251,6 +256,25 @@
           "description": "Default quantum framework to use (auto detects from code)"
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "quantum-ai",
+          "title": "Quantum AI",
+          "icon": "media/icon1.svg"
+        }
+      ]
+    },
+    "views": {
+      "quantum-ai": [
+        {
+          "id": "quantumAI.chatView",
+          "name": "AI Chatbot",
+          "type": "webview",
+          "icon": "media/icon1.svg"
+        }
+      ]
     }
   },
   "scripts": {

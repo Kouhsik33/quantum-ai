@@ -11,12 +11,14 @@ import { ConfigService } from './services/configService';
 import { ErrorHandler, ErrorSeverity } from './services/errorHandler';
 import { CacheService } from './services/cacheService';
 import { TranspileCommand } from './features/transpile/command';
+import { ChatViewProvider } from './chatbot/chatView';  // NEW: Import chat view
 
 let aiProvider: AIProvider;
 let statusBarItem: vscode.StatusBarItem;
 let outputChannel: vscode.OutputChannel;
 let configService: ConfigService;
 let errorHandler: ErrorHandler;
+
 
 export async function activate(context: vscode.ExtensionContext) {
     // Initialize services
@@ -29,7 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize cache service
     CacheService.getInstance(context);
 
-    // Initialize Quantum Hub provider (your backend API - no auth)
+    // Initialize Quantum Hub provider
     aiProvider = new QuantumHubProvider(context, outputChannel);
 
     // Create status bar item
@@ -42,9 +44,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Register providers with supported languages
     const supportedLanguages = [
-        'python',  // Primary language for quantum computing
-        'javascript', 'typescript', 
-        'c', 'cpp', 'rust'  // Other languages for quantum-classical integration
+        'python', 'javascript', 'typescript', 'c', 'cpp', 'rust'
     ];
 
     const languageSelector = supportedLanguages.map(lang => ({ 
@@ -52,7 +52,7 @@ export async function activate(context: vscode.ExtensionContext) {
         scheme: 'file' 
     }));
 
-    // Register inline completion provider with debouncing
+    // Register inline completion provider
     if (configService.get('completionEnabled', true)) {
         try {
             const inlineProvider = new QuantumInlineCompletionProvider(aiProvider);
@@ -95,15 +95,13 @@ export async function activate(context: vscode.ExtensionContext) {
     const explainCommand = new ExplainCommand(aiProvider, outputChannel);
     const applyFixCommand = new ApplyFixCommand(aiProvider, outputChannel);
     const suggestCommand = new SuggestCommand(aiProvider, outputChannel);
-
     const transpileCommand = new TranspileCommand(aiProvider, outputChannel, context);
 
-//     context.subscriptions.push(
-//     vscode.commands.registerCommand('quantum-ai.transpile', () => 
-//         executeCommandSafely(() => transpileCommand.execute(), 'transpile')
-//     )
-// );
-
+    // NEW: Register Chat View Provider
+    const chatProvider = new ChatViewProvider(context);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('quantumAI.chatView', chatProvider)
+    );
 
     // Register commands
     context.subscriptions.push(
@@ -120,13 +118,17 @@ export async function activate(context: vscode.ExtensionContext) {
             executeCommandSafely(() => suggestCommand.execute(), 'suggest')
         ),
         vscode.commands.registerCommand('quantum-ai.transpile', () => 
-        executeCommandSafely(() => transpileCommand.execute(), 'transpile')
-    ),
+            executeCommandSafely(() => transpileCommand.execute(), 'transpile')
+        ),
         vscode.commands.registerCommand('quantum-ai.configure', () => configure()),
         vscode.commands.registerCommand('quantum-ai.clearCache', () => clearCache()),
         vscode.commands.registerCommand('quantum-ai.toggleCompletion', () => toggleCompletion()),
         vscode.commands.registerCommand('quantum-ai.showOutput', () => outputChannel.show()),
-        vscode.commands.registerCommand('quantum-ai.checkBackend', () => checkBackendStatus())
+        vscode.commands.registerCommand('quantum-ai.checkBackend', () => checkBackendStatus()),
+        // NEW: Add chat open command
+        vscode.commands.registerCommand('quantum-ai.openChat', () => {
+            vscode.commands.executeCommand('workbench.view.extension.quantum-ai');
+        })
     );
 
     // Register configuration change listener
@@ -137,7 +139,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initial status bar update
     updateStatusBar();
 
-    // Check backend connection on startup
+    // Check backend connection
     setTimeout(() => checkBackendStatus(), 1000);
 
     outputChannel.appendLine('Quantum AI extension activated successfully');
@@ -352,6 +354,6 @@ export function deactivate() {
     }
     if (outputChannel) {
         outputChannel.appendLine('Quantum AI extension deactivated');
-        outputChannel.dispose();
+        outputChannel.dispose();                                                                   
     }
 }
