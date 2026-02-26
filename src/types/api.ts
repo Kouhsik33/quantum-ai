@@ -59,7 +59,6 @@ export interface ExplanationResponse {
     runtime_recommendations?: Record<string, any>;
 }
 
-// src/types/api.ts - Add or update TranspilationRequest
 
 export interface RuntimePreferences {
     preferred_runtime?: string;

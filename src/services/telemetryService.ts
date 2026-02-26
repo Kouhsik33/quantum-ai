@@ -77,7 +77,7 @@ export class TelemetryService {
 
         try {
             // Send to your backend telemetry endpoint
-            await fetch('https://your-backend-api.com/telemetry', {
+            await fetch('http:/api/telemetry', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
