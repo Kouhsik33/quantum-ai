@@ -20,7 +20,8 @@ export class QuantumHubApiService {
     constructor() {
         // Get backend URL from config or use default
         const config = vscode.workspace.getConfiguration('quantum-ai');
-        const backendUrl = config.get<string>('backendUrl', 'http://localhost:8000/api');
+        // const backendUrl = config.get<string>('backendUrl', 'http://localhost:8000/api');
+        const backendUrl = config.get('backendUrl', 'http://localhost:8000/api') as string;
         
         this.client = axios.create({
             baseURL: backendUrl,

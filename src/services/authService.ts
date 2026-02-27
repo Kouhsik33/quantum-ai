@@ -93,7 +93,7 @@ export class AuthService {
         const apiKey = await vscode.window.showInputBox({
             prompt: "Enter your Quantum AI API key",
             password: true,
-            validateInput: (input) => {
+            validateInput: (input: string) => {
                 if (!input || input.length < 10) {
                     return "Please enter a valid API key";
                 }

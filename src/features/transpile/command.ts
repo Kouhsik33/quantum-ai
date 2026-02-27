@@ -91,7 +91,7 @@ export class TranspileCommand {
                 location: vscode.ProgressLocation.Notification,
                 title: `Transpiling from ${sourceFramework} to ${targetFramework}...`,
                 cancellable: true
-            }, async (progress, token) => {
+            }, async (progress: vscode.Progress<{ message?: string; increment?: number }>, token: vscode.CancellationToken) => {
                 token.onCancellationRequested(() => {
                     throw new Error('Cancelled');
                 });
@@ -265,8 +265,8 @@ export class TranspileCommand {
             // Get runtime preferences from settings
             const config = vscode.workspace.getConfiguration('quantum-ai');
             const runtimePreferences = {
-                preferred_runtime: config.get<string>('preferredRuntime'),
-                compatibility_level: config.get<string>('compatibilityLevel', 'balanced')
+                preferred_runtime: config.get('preferredRuntime'),
+                compatibility_level: config.get('compatibilityLevel', 'balanced')
             };
 
             const request: TranspilationRequest = {
@@ -274,7 +274,7 @@ export class TranspileCommand {
                 source_framework: sourceFramework,
                 target_framework: targetFramework,
                 preserve_comments: true,
-                optimize: config.get<boolean>('optimizeOnTranspile', false),
+                optimize: config.get('optimizeOnTranspile', false),
                 client_context: getClientContext(this.context),
                 runtime_preferences: runtimePreferences
             };

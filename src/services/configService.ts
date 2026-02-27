@@ -55,7 +55,7 @@ export class ConfigService {
     }
 
     onDidChange(listener: (e: vscode.ConfigurationChangeEvent) => any): vscode.Disposable {
-        return vscode.workspace.onDidChangeConfiguration(e => {
+        return vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
             if (e.affectsConfiguration('quantum-ai')) {
                 this.config = vscode.workspace.getConfiguration('quantum-ai');
                 listener(e);

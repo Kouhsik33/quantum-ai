@@ -30,11 +30,10 @@ export class ExplainCommand {
                 location: vscode.ProgressLocation.Notification,
                 title: '🔮 Quantum AI is analyzing your code...',
                 cancellable: true
-            }, async (progress, token) => {
+            }, async (progress: vscode.Progress<{ message?: string; increment?: number }>, token: vscode.CancellationToken) => {
                 token.onCancellationRequested(() => {
                     throw new Error('Cancelled');
                 });
-
                 progress.report({ message: 'Understanding quantum concepts...', increment: 30 });
                 const result = await this.aiProvider.explain(selectedText, languageId);
                 progress.report({ message: 'Formatting explanation...', increment: 70 });
@@ -61,7 +60,7 @@ export class ExplainCommand {
             panel.webview.html = this.getWebviewContent(selectedText, explanation, languageId, panel.webview);
 
             // Handle messages from the webview
-            panel.webview.onDidReceiveMessage(async message => {
+            panel.webview.onDidReceiveMessage(async (message: any) => {
                 switch (message.command) {
                     case 'copyExplanation':
                         await vscode.env.clipboard.writeText(message.text);

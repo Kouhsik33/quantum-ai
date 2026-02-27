@@ -1,4 +1,4 @@
-// src/extension.ts (No Auth Required - Backend Available)
+// src/extension.ts
 import * as vscode from 'vscode';
 import { QuantumHubProvider } from './providers/quantumHubProvider';
 import { AIProvider } from './providers/aiProvider';
@@ -7,11 +7,15 @@ import { QuantumCodeActionProvider } from './features/codeActions/provider';
 import { ExplainCommand } from './features/explain/command';
 import { ApplyFixCommand } from './features/fix/command';
 import { SuggestCommand } from './features/suggest/command';
+import { TranspileCommand } from './features/transpile/command';
 import { ConfigService } from './services/configService';
 import { ErrorHandler, ErrorSeverity } from './services/errorHandler';
 import { CacheService } from './services/cacheService';
-import { TranspileCommand } from './features/transpile/command';
-import { ChatViewProvider } from './chatbot/chatView';  // NEW: Import chat view
+import { ChatViewProvider } from './chatView';
+
+// Import ARP components
+import { ArpApiClient } from './arp/apiClient';
+import { ChatSessionController } from './arp/sessionController';
 
 let aiProvider: AIProvider;
 let statusBarItem: vscode.StatusBarItem;
@@ -19,6 +23,9 @@ let outputChannel: vscode.OutputChannel;
 let configService: ConfigService;
 let errorHandler: ErrorHandler;
 
+// Store ARP instances
+let arpApi: ArpApiClient;
+let arpController: ChatSessionController | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
     // Initialize services
@@ -33,6 +40,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Initialize Quantum Hub provider
     aiProvider = new QuantumHubProvider(context, outputChannel);
+
+    // Initialize ARP API
+    const config = vscode.workspace.getConfiguration('quantum-ai');
+    // const baseUrl = config.get<string>('arp.baseUrl', 'http://127.0.0.1:8000/api/v1') || 'http://127.0.0.1:8000/api/v1';
+    const baseUrlString = (config.get('arp.baseUrl') as string) || 'http://127.0.0.1:8000/api/v1'
+    const arpOutput = vscode.window.createOutputChannel('ARP Backend');
+    arpApi = new ArpApiClient(() => baseUrlString, arpOutput);
+    context.subscriptions.push(arpOutput);
 
     // Create status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -97,21 +112,42 @@ export async function activate(context: vscode.ExtensionContext) {
     const suggestCommand = new SuggestCommand(aiProvider, outputChannel);
     const transpileCommand = new TranspileCommand(aiProvider, outputChannel, context);
 
-    // NEW: Register Chat View Provider
+    // Register Chat View Provider
     const chatProvider = new ChatViewProvider(context);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider('quantumAI.chatView', chatProvider)
     );
 
-    // Register commands
+    // Add ARP open command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('quantum-ai.openArpChat', () => {
+            const pollIntervalMs = Number(config.get('arp.pollIntervalMs', 3000));
+            const autoScroll = Boolean(config.get('arp.autoScroll', true));
+            const defaultProjectRoot = String(config.get('arp.defaultProjectRoot', '') || '');
+
+            arpController = new ChatSessionController(arpApi, context, {
+                pollIntervalMs: Number.isFinite(pollIntervalMs) && pollIntervalMs > 0 ? pollIntervalMs : 3000
+            });
+
+            // Use the same chat view but switch to ARP mode
+            vscode.commands.executeCommand('workbench.view.extension.quantum-ai');
+            
+            // Send message to webview to switch to ARP mode
+            setTimeout(() => {
+                vscode.commands.executeCommand('quantumAI.chatView.switchMode', 'arp');
+            }, 500);
+        })
+    );
+
+    // Register commands with proper types
     context.subscriptions.push(
         vscode.commands.registerCommand('quantum-ai.explain', () => 
             executeCommandSafely(() => explainCommand.execute(), 'explain')
         ),
-        vscode.commands.registerCommand('quantum-ai.fix', (document, range) => 
+        vscode.commands.registerCommand('quantum-ai.fix', (document: vscode.TextDocument, range: vscode.Range) => 
             executeCommandSafely(() => applyFixCommand.execute(document, range), 'fix')
         ),
-        vscode.commands.registerCommand('quantum-ai.applyFix', (document, range) => 
+        vscode.commands.registerCommand('quantum-ai.applyFix', (document: vscode.TextDocument, range: vscode.Range) => 
             executeCommandSafely(() => applyFixCommand.execute(document, range), 'applyFix')
         ),
         vscode.commands.registerCommand('quantum-ai.suggest', () => 
@@ -125,10 +161,12 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('quantum-ai.toggleCompletion', () => toggleCompletion()),
         vscode.commands.registerCommand('quantum-ai.showOutput', () => outputChannel.show()),
         vscode.commands.registerCommand('quantum-ai.checkBackend', () => checkBackendStatus()),
-        // NEW: Add chat open command
         vscode.commands.registerCommand('quantum-ai.openChat', () => {
             vscode.commands.executeCommand('workbench.view.extension.quantum-ai');
-        })
+        }),
+        vscode.commands.registerCommand('quantum-ai.openArpPanel', () => {
+    vscode.commands.executeCommand('quantumAI.chatView.openArpPanel');
+})
     );
 
     // Register configuration change listener
@@ -164,8 +202,6 @@ async function checkBackendStatus() {
         if (status.healthy) {
             outputChannel.appendLine(`✅ Backend connected: ${status.message}`);
             statusBarItem.tooltip = `Quantum AI - Connected to ${status.version || 'backend'}`;
-            
-            // Show success notification once
             vscode.window.setStatusBarMessage('$(check) Connected to Quantum AI backend', 3000);
         } else {
             outputChannel.appendLine(`⚠️ Backend connection issue: ${status.message}`);
@@ -175,7 +211,6 @@ async function checkBackendStatus() {
     } catch (error) {
         outputChannel.appendLine(`❌ Backend connection failed: ${error}`);
         statusBarItem.tooltip = 'Quantum AI - Backend unavailable';
-        vscode.window.showErrorMessage('Failed to connect to Quantum AI backend. Check if server is running.');
     }
 }
 
@@ -194,7 +229,6 @@ function updateStatusBar() {
 async function configure() {
     const config = configService.getAll();
     
-    // Create QuickPickItem array
     const options: vscode.QuickPickItem[] = [
         {
             label: "$(check) Enable/Disable Completions",
@@ -245,7 +279,6 @@ async function configure() {
 
     if (!selected) return;
 
-    // Handle selection based on label
     if (selected.label.includes("Enable/Disable")) {
         const current = config.completionEnabled;
         await configService.update('completionEnabled', !current);
@@ -255,7 +288,7 @@ async function configure() {
         const value = await vscode.window.showInputBox({
             prompt: "Enter max lines of context (5-100)",
             value: config.maxLinesForContext.toString(),
-            validateInput: (input) => {
+            validateInput: (input: string) => {
                 const num = parseInt(input);
                 if (isNaN(num) || num < 5 || num > 100) {
                     return "Please enter a number between 5 and 100";
@@ -271,7 +304,7 @@ async function configure() {
         const value = await vscode.window.showInputBox({
             prompt: "Enter temperature (0.0 - 1.0)",
             value: config.temperature.toString(),
-            validateInput: (input) => {
+            validateInput: (input: string) => {
                 const num = parseFloat(input);
                 if (isNaN(num) || num < 0 || num > 1) {
                     return "Please enter a number between 0 and 1";
@@ -317,8 +350,7 @@ async function configure() {
             '• Code explanations\n' +
             '• Bug fixes\n' +
             '• Code improvements\n\n' +
-            'Backend: No authentication required\n' +
-            'Status: Connected to backend API',
+            'Backend: No authentication required',
             { modal: true }
         );
     }
@@ -354,6 +386,6 @@ export function deactivate() {
     }
     if (outputChannel) {
         outputChannel.appendLine('Quantum AI extension deactivated');
-        outputChannel.dispose();                                                                   
+        outputChannel.dispose();
     }
 }

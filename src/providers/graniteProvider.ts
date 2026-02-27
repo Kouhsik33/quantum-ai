@@ -42,10 +42,10 @@ export class GraniteProvider implements AIProvider {
     private getConfig() {
         const config = vscode.workspace.getConfiguration('quantum-ai');
         return {
-            model: config.get<string>('model', 'Qwen/Qwen2.5-Coder-7B-Instruct'),
-            maxTokens: config.get<number>('maxTokens', 500),
-            temperature: config.get<number>('temperature', 0.2),
-            cacheEnabled: config.get<boolean>('cacheCompletions', true),
+            model: config.get('model', 'Qwen/Qwen2.5-Coder-7B-Instruct') as string,
+            maxTokens: config.get('maxTokens', 500) as number,
+            temperature: config.get('temperature', 0.2) as number,
+            cacheEnabled: config.get('cacheCompletions', true) as boolean,
         };
     }
 

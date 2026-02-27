@@ -32,8 +32,8 @@ export class SuggestCommand {
             const result = await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 title: '🔮 Quantum AI: Generating improvements...',
-                cancellable: true
-            }, async (progress, token) => {
+                cancellable: true   
+            }, async (progress: vscode.Progress<{ message?: string; increment?: number }>, token: vscode.CancellationToken) => {
                 token.onCancellationRequested(() => {
                     throw new Error('Cancelled');
                 });
@@ -91,7 +91,7 @@ export class SuggestCommand {
 
         panel.webview.html = this.getWebviewContent(suggestion, originalCode, language, panel.webview);
 
-        panel.webview.onDidReceiveMessage(async message => {
+        panel.webview.onDidReceiveMessage(async (message: any) => {
             switch (message.command) {
                 case 'applySuggestion':
                     const editor = vscode.window.activeTextEditor;

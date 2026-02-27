@@ -33,7 +33,7 @@ export class ApplyFixCommand {
             location: vscode.ProgressLocation.Notification,
             title: 'Generating fix...',
             cancellable: true
-        }, async (progress, token) => {
+        }, async (progress: vscode.Progress<{ message?: string; increment?: number }>, token: vscode.CancellationToken) => {
             token.onCancellationRequested(() => {
                 throw new Error('Cancelled');
             });

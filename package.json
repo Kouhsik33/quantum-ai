@@ -74,7 +74,17 @@
       "command": "quantum-ai.openChat",
       "title": "Quantum AI: Open Chat",
       "category": "Quantum AI"
-    }
+    },
+    {
+        "command": "quantum-ai.openArpChat",
+        "title": "Quantum AI: Open ARP Chat",
+        "category": "Quantum AI"
+      },
+      {
+  "command": "quantum-ai.openArpPanel",
+  "title": "Quantum AI: Open ARP Chat Panel",
+  "category": "Quantum AI"
+}
     ],
     "keybindings": [
       {
@@ -254,6 +264,27 @@
             "torchquantum"
           ],
           "description": "Default quantum framework to use (auto detects from code)"
+        },
+        "quantum-ai.arp.baseUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8001/api/v1",
+          "description": "Base URL for Autonomous Research Platform backend API"
+        },
+        "quantum-ai.arp.pollIntervalMs": {
+          "type": "number",
+          "default": 3000,
+          "minimum": 500,
+          "description": "Status polling interval for ARP"
+        },
+        "quantum-ai.arp.autoScroll": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-scroll timeline for ARP"
+        },
+        "quantum-ai.arp.defaultProjectRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Default output root folder for ARP"
         }
       }
     },

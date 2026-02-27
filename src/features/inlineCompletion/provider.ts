@@ -16,7 +16,7 @@ export class QuantumInlineCompletionProvider implements vscode.InlineCompletionI
     ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null | undefined> {
         
         const config = vscode.workspace.getConfiguration('quantum-ai');
-        const enabled = config.get<boolean>('completionEnabled', true);
+        const enabled = config.get('completionEnabled', true) as boolean;
         
         if (!enabled) {
             return null;
@@ -45,7 +45,7 @@ export class QuantumInlineCompletionProvider implements vscode.InlineCompletionI
         }
 
         // Debounce to avoid too many requests
-        const debounceDelay = config.get<number>('debounceDelay', 300);
+        const debounceDelay = (config.get('debounceDelay', 300) as number);
         
         return new Promise((resolve) => {
             if (this.debounceTimer) {
@@ -96,7 +96,7 @@ export class QuantumInlineCompletionProvider implements vscode.InlineCompletionI
 
     private buildCompletionContext(document: vscode.TextDocument, position: vscode.Position): string {
         const config = vscode.workspace.getConfiguration('quantum-ai');
-        const maxLines = config.get<number>('maxLinesForContext', 20);
+        const maxLines = (config.get('maxLinesForContext', 20) as number);
         
         // Only get text BEFORE the cursor position
         const startLine = Math.max(0, position.line - maxLines);

@@ -382,12 +382,12 @@ Explanation:
     }
 
     private detectFramework(code: string, language: string): string {
-        if (language !== 'python') return 'qiskit';
+        if (language !== 'python') return 'pennylane';
         
-        if (code.includes('from qiskit') || code.includes('import qiskit')) {
-            return 'qiskit';
-        } else if (code.includes('import pennylane') || code.includes('from pennylane')) {
+        if (code.includes('import pennylane') || code.includes('from pennylane')) {
             return 'pennylane';
+        } else if (code.includes('from qiskit') || code.includes('import qiskit')) {
+            return 'qiskit';
         } else if (code.includes('import cirq') || code.includes('from cirq')) {
             return 'cirq';
         } else if (code.includes('import torchquantum') || code.includes('from torchquantum')) {
@@ -395,8 +395,8 @@ Explanation:
         }
         
         const config = vscode.workspace.getConfiguration('quantum-ai');
-        const defaultFramework = config.get<string>('framework', 'qiskit');
-        return defaultFramework === 'auto' ? 'qiskit' : defaultFramework;
+        const defaultFramework = config.get('framework', 'pennylane') as string;
+        return defaultFramework === 'auto' ? 'pennylane' : defaultFramework;
     }
 
     private getDetailLevel(): 'beginner' | 'intermediate' | 'advanced' {

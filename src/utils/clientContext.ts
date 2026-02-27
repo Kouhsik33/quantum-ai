@@ -223,9 +223,9 @@ export function getClientContextWithAsync(
 async function getPythonInfo(): Promise<PythonContext | undefined> {
     try {
         // Try to get Python from workspace settings first
-        const pythonConfig = vscode.workspace.getConfiguration('python');
-        const pythonPath = pythonConfig.get<string>('defaultInterpreterPath') || 
-                          pythonConfig.get<string>('interpreterPath') ||
+        const pythonConfig = vscode.workspace.getConfiguration('python') as vscode.WorkspaceConfiguration;
+        const pythonPath = pythonConfig.get('defaultInterpreterPath') as string || 
+                          pythonConfig.get('interpreterPath') as string ||
                           'python';
 
         // Get Python version
@@ -273,7 +273,7 @@ async function getInstalledPackages(): Promise<Record<string, string> | undefine
     try {
         // Try to get python path
         const pythonConfig = vscode.workspace.getConfiguration('python');
-        const pythonPath = pythonConfig.get<string>('defaultInterpreterPath') || 'python';
+        const pythonPath = pythonConfig.get('defaultInterpreterPath') as string || 'python';
 
         // Check each quantum package
         for (const pkg of quantumPackages) {
@@ -330,7 +330,7 @@ function getWorkspaceContext(): WorkspaceContext | undefined {
     }
 
     const context: WorkspaceContext = {
-        workspace_folders: workspaceFolders.map(f => f.uri.fsPath),
+        workspace_folders: workspaceFolders.map((f: vscode.WorkspaceFolder) => f.uri.fsPath),
         has_python_files: false,
         has_requirements_txt: false,
         has_environment_yml: false,
@@ -382,7 +382,7 @@ export function getFrameworkFromDocument(document: vscode.TextDocument): string 
     
     // Default based on language or config
     const config = vscode.workspace.getConfiguration('quantum-ai');
-    const defaultFramework = config.get<string>('framework', 'qiskit');
+    const defaultFramework = config.get('framework', 'qiskit') as string;
     
     return defaultFramework === 'auto' ? 'qiskit' : defaultFramework;
 }
