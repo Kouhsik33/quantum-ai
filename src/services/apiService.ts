@@ -38,15 +38,69 @@ export class QuantumHubApiService {
         );
     }
 
+    private static extractApiErrorDetail(data: unknown): string | null {
+        if (!data || typeof data !== 'object') {
+            return null;
+        }
+
+        const payload = data as Record<string, unknown>;
+        const detail = payload.detail;
+
+        if (typeof detail === 'string' && detail.trim()) {
+            return detail.trim();
+        }
+
+        if (Array.isArray(detail)) {
+            const parts = detail
+                .map((item) => {
+                    if (typeof item === 'string') return item;
+                    if (item && typeof item === 'object') {
+                        const obj = item as Record<string, unknown>;
+                        if (typeof obj.msg === 'string') return obj.msg;
+                        if (typeof obj.message === 'string') return obj.message;
+                    }
+                    return '';
+                })
+                .filter(Boolean);
+            if (parts.length > 0) {
+                return parts.join('; ');
+            }
+        }
+
+        if (detail && typeof detail === 'object') {
+            const detailObj = detail as Record<string, unknown>;
+            if (typeof detailObj.message === 'string' && detailObj.message.trim()) {
+                return detailObj.message.trim();
+            }
+        }
+
+        if (typeof payload.message === 'string' && payload.message.trim()) {
+            return payload.message.trim();
+        }
+
+        return null;
+    }
+
     private handleError(error: AxiosError): Promise<never> {
+        const status = error.response?.status;
+        const apiDetail = QuantumHubApiService.extractApiErrorDetail(error.response?.data);
+        const normalizedDetail = (apiDetail || '').toLowerCase();
+        const friendly400Message = normalizedDetail.includes('quantum')
+            ? 'Quantum AI can only process quantum-related code or prompts. Please provide quantum context and try again.'
+            : `Request rejected: ${apiDetail || 'Invalid request.'}`;
+
         if (error.code === 'ECONNABORTED') {
             vscode.window.showErrorMessage('Request timeout. Please try again.');
         } else if (!error.response) {
             vscode.window.showErrorMessage('Network error. Please check your connection.');
-        } else if (error.response.status >= 500) {
+        } else if (status === 400) {
+            vscode.window.showErrorMessage(friendly400Message, { modal: true });
+        } else if (status && status >= 500) {
             vscode.window.showErrorMessage('Server error. Please try again later.');
         }
-        return Promise.reject(error);
+
+        const message = apiDetail || error.message || (status ? `HTTP ${status}` : 'Request failed');
+        return Promise.reject(new Error(message));
     }
 
     async generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {

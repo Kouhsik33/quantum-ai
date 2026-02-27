@@ -146,6 +146,12 @@ export class QuantumHubProvider implements AIProvider {
 
     async suggest(code: string, language: string = 'python'): Promise<SuggestionResult> {
         const startTime = Date.now();
+        if (!this.isQuantumSuggestionInput(code, language)) {
+            throw new Error(
+                'Input is not recognized as quantum code. Add Qiskit/PennyLane/Cirq/TorchQuantum code or quantum context and try again.'
+            );
+        }
+
         const framework = this.detectFramework(code, language);
         
         try {
@@ -299,6 +305,35 @@ Improved Code:
 
 Explanation:
 [Detailed explanation of improvements]`;
+    }
+
+    private isQuantumSuggestionInput(code: string, language: string): boolean {
+        if (language !== 'python') {
+            return false;
+        }
+
+        const text = (code || '').toLowerCase();
+        if (!text.trim()) {
+            return false;
+        }
+
+        const quantumSignals = [
+            'qiskit',
+            'quantumcircuit',
+            'pennylane',
+            'qml.',
+            'cirq',
+            'torchquantum',
+            'qubit',
+            'hadamard',
+            'cnot',
+            'rx(',
+            'ry(',
+            'rz(',
+            'measure('
+        ];
+
+        return quantumSignals.some(signal => text.includes(signal));
     }
 
     /**

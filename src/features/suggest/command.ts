@@ -27,6 +27,13 @@ export class SuggestCommand {
         }
 
         const languageId = editor.document.languageId;
+        if (languageId !== 'python') {
+            vscode.window.showErrorMessage(
+                'Quantum AI suggestions are supported only for Python quantum code (Qiskit, PennyLane, Cirq, TorchQuantum).',
+                { modal: true }
+            );
+            return;
+        }
         
         try {
             const result = await vscode.window.withProgress({

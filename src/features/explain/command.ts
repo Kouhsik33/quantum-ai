@@ -82,9 +82,14 @@ export class ExplainCommand {
             if (error instanceof Error && error.message === 'Cancelled') {
                 vscode.window.showInformationMessage('Explanation cancelled');
             } else {
-                const errorMessage = error instanceof Error ? error.message : String(error);
-                vscode.window.showErrorMessage(`Failed to get explanation: ${errorMessage}`);
-                this.outputChannel.appendLine(`[Explain Command Error] ${errorMessage}`);
+                const rawErrorMessage = error instanceof Error ? error.message : String(error);
+                const normalizedErrorMessage = rawErrorMessage.trim().replace(/:\s*$/, '');
+                const friendlyMessage = /^explanation generation failed$/i.test(normalizedErrorMessage)
+                    ? 'Failed to get explanation: Unable to generate an explanation right now. Please try again with a clearer quantum-related code selection.'
+                    : `Failed to get explanation: ${normalizedErrorMessage || 'Unknown error'}`;
+
+                vscode.window.showErrorMessage(friendlyMessage, { modal: true });
+                this.outputChannel.appendLine(`[Explain Command Error] ${rawErrorMessage}`);
             }
         }
     }
